@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "ignoreDeprecations": "5.0",  //typescriptin istediği değer 6.0, 5.05 da baseUrl ve paths çalışmıyor
+    "noFallthroughCasesInSwitch": false,
+    // "typeRoots": ["./src/@types", "./node_modules/@types"],
+    // "types": []
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  }
+}
