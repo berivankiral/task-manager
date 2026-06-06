@@ -34,7 +34,7 @@ Client → Nginx (port 8080) → api-1 (port 3000)
 ### Run
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/berivankiral/task-manager.git
 cd task-manager
 docker compose up --build
 ```
