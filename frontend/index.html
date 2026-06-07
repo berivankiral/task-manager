@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 20px; color: #333; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2 { margin-bottom: 15px; color: #444; font-size: 16px; }
+    input, select { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    button { padding: 8px 16px; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 8px; }
+    button:hover { background: #4338ca; }
+    button.red { background: #ef4444; }
+    button.red:hover { background: #dc2626; }
+    button.green { background: #22c55e; }
+    .msg { padding: 8px; border-radius: 4px; margin-bottom: 10px; font-size: 13px; }
+    .msg.ok { background: #dcfce7; color: #166534; }
+    .msg.err { background: #fee2e2; color: #991b1b; }
+    .task { border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+    .task-title { font-weight: bold; margin-bottom: 4px; }
+    .task-meta { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 4px; }
+    .todo { background: #fef3c7; color: #92400e; }
+    .in_progress { background: #dbeafe; color: #1e40af; }
+    .done { background: #dcfce7; color: #166534; }
+    .high { background: #fee2e2; color: #991b1b; }
+    .medium { background: #fef3c7; color: #92400e; }
+    .low { background: #f3f4f6; color: #374151; }
+    .hidden { display: none; }
+    .health { font-size: 13px; color: #888; text-align: right; margin-bottom: 10px; }
+    .job { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Task Manager</h1>
+    <div class="health" id="healthInfo">Instance: -</div>
+
+    <div class="card" id="authCard">
+      <h2>Giriş / Kayıt</h2>
+      <div id="authMsg"></div>
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Şifre (min 6 karakter)" />
+      <button onclick="login()">Giriş Yap</button>
+      <button onclick="register()" class="green">Kayıt Ol</button>
+    </div>
+
+    <div id="mainPanel" class="hidden">
+
+      <div class="card">
+        <h2>Hoş geldin, <span id="userEmail"></span></h2>
+        <button onclick="logout()" class="red">Çıkış</button>
+      </div>
+
+      <div class="card">
+        <h2>Yeni Görev Ekle</h2>
+        <div id="taskMsg"></div>
+        <input type="text" id="taskTitle" placeholder="Görev başlığı" />
+        <input type="text" id="taskDesc" placeholder="Açıklama (opsiyonel)" />
+        <select id="taskPriority">
+          <option value="">Öncelik seç</option>
+          <option value="low">Düşük</option>
+          <option value="medium">Orta</option>
+          <option value="high">Yüksek</option>
+        </select>
+        <button onclick="createTask()">Ekle</button>
+      </div>
+
+      <div class="card">
+        <h2>Görevlerim</h2>
+        <select id="filterStatus" onchange="loadTasks()">
+          <option value="">Tümü</option>
+          <option value="todo">Yapılacak</option>
+          <option value="in_progress">Devam Ediyor</option>
+          <option value="done">Tamamlandı</option>
+        </select>
+        <div id="taskList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Job Sistemi</h2>
+        <button onclick="createJob()" class="green">Özet Oluştur</button>
+        <button onclick="loadJobs()">Jobları Listele</button>
+        <div id="jobList" style="margin-top:10px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  const API = 'http://localhost:8080';
+  let token = localStorage.getItem('token') || '';
+
+  window.onload = () => {
+    checkHealth();
+    if (token) showMain();
+  };
+
+  async function checkHealth() {
+    try {
+      const r = await fetch(`${API}/health`);
+      const d = await r.json();
+      document.getElementById('healthInfo').textContent = `Instance: ${d.instance}`;
+    } catch {}
+  }
+
+  function statusLabel(s) {
+    return s === 'todo' ? 'Yapılacak' : s === 'in_progress' ? 'Devam Ediyor' : 'Tamamlandı';
+  }
+
+  function priorityLabel(p) {
+    return p === 'low' ? 'Düşük' : p === 'medium' ? 'Orta' : 'Yüksek';
+  }
+
+  function jobStatusLabel(s) {
+    return s === 'completed' ? 'Tamamlandı' : s === 'failed' ? 'Başarısız' : s === 'processing' ? 'İşleniyor' : 'Bekliyor';
+  }
+
+  function showMsg(id, text, isErr) {
+    const el = document.getElementById(id);
+    el.className = `msg ${isErr ? 'err' : 'ok'}`;
+    el.textContent = text;
+    setTimeout(() => el.textContent = '', 3000);
+  }
+
+  async function register() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const r = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const d = await r.json();
+    if (r.ok) showMsg('authMsg', 'Kayıt başarılı! Giriş yapabilirsiniz.', false);
+    else showMsg('authMsg', d.message || 'Hata oluştu', true);
+  }
+
+  async function login() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const r = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const d = await r.json();
+    if (r.ok) {
+      token = d.access_token;
+      localStorage.setItem('token', token);
+      showMain();
+    } else {
+      showMsg('authMsg', d.message || 'Giriş başarısız', true);
+    }
+  }
+
+  async function showMain() {
+    document.getElementById('authCard').classList.add('hidden');
+    document.getElementById('mainPanel').classList.remove('hidden');
+    const r = await fetch(`${API}/auth/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const d = await r.json();
+    document.getElementById('userEmail').textContent = d.email;
+    loadTasks();
+    checkHealth();
+  }
+
+  function logout() {
+    token = '';
+    localStorage.removeItem('token');
+    document.getElementById('authCard').classList.remove('hidden');
+    document.getElementById('mainPanel').classList.add('hidden');
+  }
+
+  async function createTask() {
+    const title = document.getElementById('taskTitle').value;
+    const description = document.getElementById('taskDesc').value;
+    const priority = document.getElementById('taskPriority').value;
+    if (!title) return showMsg('taskMsg', 'Başlık zorunlu', true);
+
+    const body = { title };
+    if (description) body.description = description;
+    if (priority) body.priority = priority;
+
+    const r = await fetch(`${API}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(body)
+    });
+    if (r.ok) {
+      showMsg('taskMsg', 'Görev eklendi!', false);
+      document.getElementById('taskTitle').value = '';
+      document.getElementById('taskDesc').value = '';
+      document.getElementById('taskPriority').value = '';
+      loadTasks();
+    } else {
+      const d = await r.json();
+      showMsg('taskMsg', d.message || 'Hata', true);
+    }
+  }
+
+  async function loadTasks() {
+    const status = document.getElementById('filterStatus').value;
+    let url = `${API}/tasks`;
+    if (status) url += `?status=${status}`;
+    const r = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const d = await r.json();
+    const list = document.getElementById('taskList');
+    if (!d.length) { list.innerHTML = '<p style="color:#888;font-size:13px;">Görev yok</p>'; return; }
+    list.innerHTML = d.map(t => `
+      <div class="task">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">${t.description || ''}</div>
+        <span class="badge ${t.status}">${statusLabel(t.status)}</span>
+        ${t.priority ? `<span class="badge ${t.priority}">${priorityLabel(t.priority)}</span>` : ''}
+        <div style="margin-top:8px;">
+          <select onchange="updateStatus('${t.id}', this.value)">
+            <option value="">Durum değiştir</option>
+            <option value="todo">Yapılacak</option>
+            <option value="in_progress">Devam Ediyor</option>
+            <option value="done">Tamamlandı</option>
+          </select>
+          <button class="red" onclick="deleteTask('${t.id}')">Sil</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function updateStatus(id, status) {
+    if (!status) return;
+    await fetch(`${API}/tasks/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ status })
+    });
+    loadTasks();
+  }
+
+  async function deleteTask(id) {
+    if (!confirm('Silmek istediğinize emin misiniz?')) return;
+    await fetch(`${API}/tasks/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    loadTasks();
+  }
+
+  async function createJob() {
+    const r = await fetch(`${API}/jobs`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (r.ok) {
+      setTimeout(loadJobs, 1000);
+    }
+  }
+
+  async function loadJobs() {
+    const r = await fetch(`${API}/jobs`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const d = await r.json();
+    const list = document.getElementById('jobList');
+    if (!d.length) { list.innerHTML = '<p style="color:#888;font-size:13px;">Job yok</p>'; return; }
+    list.innerHTML = d.map(j => `
+      <div class="job">
+        <strong>Görev Özeti</strong> — <span class="badge ${j.status === 'completed' ? 'done' : j.status === 'failed' ? 'high' : 'in_progress'}">${jobStatusLabel(j.status)}</span>
+        ${j.result ? `<p style="margin-top:6px;">${j.result}</p>` : ''}
+        <p style="color:#aaa;font-size:11px;margin-top:4px;">${new Date(j.createdAt).toLocaleString('tr-TR')}</p>
+      </div>
+    `).join('');
+  }
+</script>
+</body>
+</html>

@@ -161,3 +161,8 @@ JWT tokens are stateless, which means they work correctly across multiple instan
 
 ### Jobs
 Jobs are processed asynchronously. When a job is created, it immediately returns with `pending` status. The processing happens in the background and the status updates to `completed` when done. Since JWT is stateless and jobs are stored in the shared PostgreSQL database, this works correctly across all 3 instances.
+
+## Frontend
+
+`frontend/index.html` dosyasını tarayıcıda açın.
+Docker çalışırken backend'e otomatik bağlanır.
