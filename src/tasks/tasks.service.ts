@@ -17,7 +17,7 @@ export class TasksService {
     const task = this.taskRepository.create({
       ...dto,
       userId: user.id,
-      user,
+      //user,   
     });
     return this.taskRepository.save(task);
   }

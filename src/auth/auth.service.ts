@@ -19,7 +19,7 @@ export class AuthService {
     const exists = await this.userRepository.findOne({
       where: { email: dto.email },
     });
-    if (exists) throw new ConflictException('Bu email zaten kayıtlı');
+    if (exists) throw new ConflictException('This email is already registered');
 
     const hashed = await bcrypt.hash(dto.password, 10);
     const user = this.userRepository.create({
@@ -28,17 +28,22 @@ export class AuthService {
     });
     await this.userRepository.save(user);
 
-    return { message: 'Kayıt başarılı' };
+    return { message: 'Registration successful' };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.userRepository.findOne({
-      where: { email: dto.email },
-    });
-    if (!user) throw new UnauthorizedException('Geçersiz bilgiler');
+    const user = await this.userRepository
+    .createQueryBuilder('user')
+    .addSelect('user.password')
+    .where('user.email = :email', {
+       email: dto.email 
+      })
+    .getOne();
+    
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const match = await bcrypt.compare(dto.password, user.password);
-    if (!match) throw new UnauthorizedException('Geçersiz bilgiler');
+    if (!match) throw new UnauthorizedException('Invalid credentials');
 
     const token = this.jwtService.sign({
       sub: user.id,
@@ -48,8 +53,6 @@ export class AuthService {
     return { access_token: token };
   }
 
-  async me(user: User) {
-    const { password, ...result } = user;
-    return result;
+ async me(user: User) { const { password, ...result } = user; return result;
   }
 }

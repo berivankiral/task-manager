@@ -19,7 +19,6 @@ export class JobsService {
       type: 'task_summary',
       status: 'pending',
       userId: user.id,
-      user,
     });
     await this.jobRepository.save(job);
     this.processJob(job.id, user.id);
