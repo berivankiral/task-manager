@@ -1,12 +1,17 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard} from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import {InjectRepository} from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AuthModule } from './auth/auth.module';
 import { TasksModule } from './tasks/tasks.module';
 import { JobsModule } from './jobs/jobs.module';
 import { HealthModule } from './health/health.module';
+import { User } from './auth/user.entity';
+import {Role} from './auth/roles.enum';
+import * as bcrypt from 'bcrypt';
 
 @Module({
   imports: [
@@ -29,6 +34,7 @@ import { HealthModule } from './health/health.module';
         synchronize: true, 
       }),
     }),
+    TypeOrmModule.forFeature([User]),
     AuthModule,
     TasksModule,
     JobsModule,
@@ -41,4 +47,22 @@ import { HealthModule } from './health/health.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
+  
+  async onModuleInit() {
+    const adminExists = await this.userRepository.findOne({ where: { email: 'admin@admin.com' }, });
+    if (!adminExists) {
+      const hashed = await bcrypt.hash('admin123', 10);
+      const admin = this.userRepository.create({
+        email: 'admin@admin.com',
+        password: hashed,
+        role: Role.ADMIN,
+      });
+      //await this.userRepository.save(admin);
+    }
+  }
+}

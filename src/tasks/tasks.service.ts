@@ -17,7 +17,6 @@ export class TasksService {
     const task = this.taskRepository.create({
       ...dto,
       userId: user.id,
-      //user,   
     });
     return this.taskRepository.save(task);
   }
@@ -53,5 +52,9 @@ export class TasksService {
     const task = await this.findOne(id, user);
     await this.taskRepository.remove(task);
     return { message: 'Görev silindi' };
+  }
+  
+  async findAllAdmin(): Promise<Task[]> {
+    return this.taskRepository.find({ order: { createdAt: 'DESC' } });
   }
 }
