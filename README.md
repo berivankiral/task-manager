@@ -164,5 +164,5 @@ Jobs are processed asynchronously. When a job is created, it immediately returns
 
 ## Frontend
 
-`frontend/index.html` dosyasını tarayıcıda açın.
-Docker çalışırken backend'e otomatik bağlanır.
+Open the `frontend/index.html` file in your browser.
+The frontend will automatically connect to the backend while Docker is running.
