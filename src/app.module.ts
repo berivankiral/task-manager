@@ -56,13 +56,13 @@ export class AppModule implements OnModuleInit {
   async onModuleInit() {
     const adminExists = await this.userRepository.findOne({ where: { email: 'admin@admin.com' }, });
     if (!adminExists) {
-      const hashed = await bcrypt.hash('admin123', 10);
+      const hashed = await bcrypt.hash('Admin123!', 10);
       const admin = this.userRepository.create({
         email: 'admin@admin.com',
         password: hashed,
         role: Role.ADMIN,
       });
-      //await this.userRepository.save(admin);
+      await this.userRepository.save(admin);
     }
   }
 }

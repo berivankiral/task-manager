@@ -36,9 +36,9 @@ export class TasksService {
   }
 
   async findOne(id: string, user: User): Promise<Task> {
-    const task = await this.taskRepository.findOne({ where: { id } });
+    const task = await this.taskRepository.findOne({ where: { id, userId: user.id } });
     if (!task) throw new NotFoundException('Görev bulunamadı');
-    if (task.userId !== user.id) throw new ForbiddenException('Bu göreve erişemezsiniz');
+    //if (task.userId !== user.id) throw new ForbiddenException('Bu göreve erişemezsiniz');
     return task;
   }
 
