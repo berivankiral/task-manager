@@ -9,7 +9,11 @@ async function bootstrap() {
 
   app.set('trust proxy', true);
 
-  app.enableCors();
+  app.enableCors({
+    // origin: 'http://127.0.0.1:5500',
+    // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    // credentials: true,
+  });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })); 
   

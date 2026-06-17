@@ -53,8 +53,13 @@ export class AppModule implements OnModuleInit {
     private userRepository: Repository<User>,
   ) {}
   
-  async onModuleInit() {
-    const adminExists = await this.userRepository.findOne({ where: { email: 'admin@admin.com' }, });
+async onModuleInit() {
+  try {
+    const adminExists = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.email = :email', { email: 'admin@admin.com' })
+      .getOne();
+
     if (!adminExists) {
       const hashed = await bcrypt.hash('Admin123!', 10);
       const admin = this.userRepository.create({
@@ -63,6 +68,27 @@ export class AppModule implements OnModuleInit {
         role: Role.ADMIN,
       });
       await this.userRepository.save(admin);
+      console.log('Admin created');
     }
+  } catch (error:unknown) {
+    console.error('Admin seed error:', (error as Error).message);
   }
 }
+}
+// Previously used findOne() but it conflicted with select:false on password field.
+// When admin already existed, it threw a duplicate key error and crashed the app.
+// Solved by wrapping in try/catch and using createQueryBuilder to bypass select:false issue.
+
+//   async onModuleInit() {
+//     const adminExists = await this.userRepository.findOne({ where: { email: 'admin@admin.com' }, }); 
+//     if (!adminExists) {
+//       const hashed = await bcrypt.hash('Admin123!', 10);
+//       const admin = this.userRepository.create({
+//         email: 'admin@admin.com',
+//         password: hashed,
+//         role: Role.ADMIN,
+//       });
+//       await this.userRepository.save(admin);
+//     }
+//   }
+// }
