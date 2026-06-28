@@ -9,6 +9,9 @@ async function bootstrap() {
 
   app.set('trust proxy', true);
 
+  app.use(require('express').json({ limit: '256mb' }));
+  app.use(require('express').urlencoded({ limit: '256mb', extended: true }));
+
   app.enableCors({
     // origin: 'http://127.0.0.1:5500',
     // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',

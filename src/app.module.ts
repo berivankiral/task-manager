@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { TasksModule } from './tasks/tasks.module';
 import { JobsModule } from './jobs/jobs.module';
 import { HealthModule } from './health/health.module';
+import {FilesModule} from './files/files.module';
 import { User } from './auth/user.entity';
 import {Role} from './auth/roles.enum';
 import * as bcrypt from 'bcrypt';
@@ -39,6 +40,7 @@ import * as bcrypt from 'bcrypt';
     TasksModule,
     JobsModule,
     HealthModule,
+    FilesModule,
   ],
   providers: [
     {
