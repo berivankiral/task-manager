@@ -4,6 +4,7 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from
 import { JwtService } from './jwt.service';
 //import { User } from './user.entity';
 
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
@@ -15,15 +16,30 @@ export class JwtAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
+    let token: string | undefined;
+
     const authHeader = request.headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('No token provided');
+    if (authHeader && typeof authHeader === 'string' && authHeader.toLowerCase().startsWith('bearer ')) {
+    //if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+    //if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      //throw new UnauthorizedException('No token provided');
+    //}
+
+    //const token = authHeader.split(' ')[1];
+    if (!token && request.cookies?.access_token) {
+      token = request.cookies.access_token;
     }
 
-    const token = authHeader.split(' ')[1];
-
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
     const user = await this.jwtService.validateUser(token);
-
+    request.user = user;
+    return true;
+  }
+}
     // const payload = this.jwtService.verify(token);
 
 
@@ -40,7 +56,4 @@ export class JwtAuthGuard implements CanActivate {
 
     // if (!user) throw new UnauthorizedException('User not found');
 
-    request.user = user;
-    return true;
-  }
-}
+  
