@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
+interface UploadedFileInfo {
+  filename: string;
+  originalname: string;
+  size: number;
+  mimetype: string;
+}
+
 @Injectable()
 export class FilesService {
-  uploadFile(file: Express.Multer.File, userId: string) {
+  uploadFile(file: UploadedFileInfo, userId: string) {
     return {
       message: 'File uploaded successfully',
       filename: file.filename,

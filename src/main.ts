@@ -2,17 +2,39 @@ import { NestFactory, Reflector} from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, ClassSerializerInterceptor} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import{NestExpressApplication} from '@nestjs/platform-express';
-import cookieParser from 'cookie-parser';
+import { NestFastifyApplication, FastifyAdapter } from '@nestjs/platform-fastify';
+import fastifyCookie from '@fastify/cookie';
+import fastifyMultipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import {join} from 'path';
+//import{NestExpressApplication} from '@nestjs/platform-express';
+//import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule, 
+    new FastifyAdapter({trustProxy: true, logger: true, bodyLimit: 256 * 1024 * 1024}),);
 
-  app.set('trust proxy', true);
-  app.use(cookieParser());
+    await app.register(fastifyCookie, {
+      secret: process.env.COOKIE_SECRET || 'default_secret', // for cookies signature
+    });
 
-  app.use(require('express').json({ limit: '256mb' }));
-  app.use(require('express').urlencoded({ limit: '256mb', extended: true }));
+    await app.register(fastifyMultipart, {
+      limits: {
+        fileSize: 256 * 1024 * 1024, // 256 MB
+      },
+    });
+
+    await app.register(fastifyStatic, {
+      root: join(__dirname, '..', 'uploads'),
+      prefix: '/uploads/',
+    });
+
+  // app.set('trust proxy', true);
+  // app.use(cookieParser());
+
+  // app.use(require('express').json({ limit: '256mb' }));
+  // app.use(require('express').urlencoded({ limit: '256mb', extended: true }));
 
   app.enableCors({
    origin: /https?:\/\/(?:localhost|127\.0\.0\.1|(?:\d{1,3}\.){3}\d{1,3})(:\d+)?$/,
@@ -41,6 +63,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
+  await app.listen(3000 , '0.0.0.0');  //"0.0.0.0" docker içinde dışardan erişim için ekledm
 }
 bootstrap();

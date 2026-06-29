@@ -4,19 +4,22 @@ import {
   Get,
   Param,
   UseGuards,
-  UseInterceptors,
-  UploadedFile,
   Request,
   BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiCookieAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FilesService } from './files.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../auth/user.entity';
+import { FastifyRequest } from 'fastify';
+import * as path from 'path';
+import * as fs from 'fs';
+import { pipeline } from 'stream/promises';
+import * as crypto from 'crypto';
 
 @ApiTags('Files')
 @ApiBearerAuth()
+@ApiCookieAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('files')
 export class FilesController {
@@ -28,21 +31,31 @@ export class FilesController {
     schema: {
       type: 'object',
       properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
+        file: { type: 'string', format: 'binary' },
       },
     },
   })
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
-  uploadFile(
-    @UploadedFile() file: Express.Multer.File,
-    @Request() req: { user: User },
-  ) {
-    if (!file) throw new BadRequestException('No file provided');
-    return this.filesService.uploadFile(file, req.user.id);
+  async uploadFile(@Request() req: FastifyRequest & { user: User }) {
+    const data = await req.file();
+
+    if (!data) throw new BadRequestException('No file provided');
+
+    const unique = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
+    const ext = path.extname(data.filename);
+    const filename = `${unique}${ext}`;
+    const uploadPath = path.join('./uploads', filename);
+
+    await pipeline(data.file, fs.createWriteStream(uploadPath));
+
+    const originalname = Buffer.from(data.filename, 'latin1').toString('utf8');
+
+    return this.filesService.uploadFile({
+      filename,
+      originalname,
+      size: data.file.bytesRead,
+      mimetype: data.mimetype,
+    }, req.user.id);
   }
 
   @ApiOperation({ summary: 'Get file info' })

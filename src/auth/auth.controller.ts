@@ -1,7 +1,8 @@
 import { Controller, Post, Get, Body, UseGuards, Request, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiCookieAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Response } from 'express';
+import type {FastifyReply} from 'fastify';
+// import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -23,7 +24,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login and receive a session cookie' })
   @Throttle({ default: {limit: 5, ttl: 60000}})
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: FastifyReply) {
     const result = await this.authService.login(dto);
     //return this.authService.login(dto);
 
@@ -31,18 +32,20 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax', //strict-> linkten tıklandığında cookie gönderilmez, lax-> linkten tıklandığında cookie gönderilir, cross-site requestlerde gönderilmez
-      maxAge: 7 * 24 * 60 * 60 * 1000 
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      path: '/', 
     });
     return result;
   }
 
   @ApiOperation({ summary: 'Logout and clear cookie' })
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Res({ passthrough: true }) res: FastifyReply) {
     res.clearCookie('access_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
     });
     return { message: 'Logged out successfully' };
   }

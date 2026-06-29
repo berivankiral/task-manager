@@ -30,7 +30,7 @@ export class JwtAuthGuard implements CanActivate {
     //const token = authHeader.split(' ')[1];
     if (!token && request.cookies?.access_token) {
       token = request.cookies.access_token;
-    }
+     }
 
     if (!token) {
       throw new UnauthorizedException('No token provided');
