@@ -5,10 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  Index,
 } from 'typeorm';
 import { User } from '../auth/user.entity';
 
 @Entity('jobs')
+@Index(['userId', 'status'])
+@Index(['status', 'createdAt'])
 export class Job {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -19,12 +22,13 @@ export class Job {
   @Column({ default: 'pending' })
   status: 'pending' | 'processing' | 'completed' | 'failed';
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   result: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
+  @Index()
   @Column()
   userId: string;
 

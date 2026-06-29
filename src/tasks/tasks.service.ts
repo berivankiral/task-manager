@@ -21,7 +21,12 @@ export class TasksService {
     return this.taskRepository.save(task);
   }
 
-  async findAll(user: User, filters: { status?: string; priority?: string }): Promise<Task[]> {
+  async findAll(user: User, filters: { status?: string; priority?: string; page?: number; limit?: number }
+  ): Promise<{data: Task[]; total: number; page: number; limit: number}> {
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 10;
+    const skip = (page - 1) * limit;
+
     const query = this.taskRepository.createQueryBuilder('task')
       .where('task.userId = :userId', { userId: user.id });
 
@@ -32,12 +37,14 @@ export class TasksService {
       query.andWhere('task.priority = :priority', { priority: filters.priority });
     }
 
-    return query.orderBy('task.createdAt', 'DESC').getMany();
+    const total = await query.getCount();
+    const data = await query.orderBy('task.createdAt', 'DESC').skip(skip).take(limit).getMany();
+    return { data, total, page, limit };
   }
 
   async findOne(id: string, user: User): Promise<Task> {
     const task = await this.taskRepository.findOne({ where: { id, userId: user.id } });
-    if (!task) throw new NotFoundException('Görev bulunamadı');
+    if (!task) throw new NotFoundException('Task not found');
     //if (task.userId !== user.id) throw new ForbiddenException('Bu göreve erişemezsiniz');
     return task;
   }
@@ -51,7 +58,7 @@ export class TasksService {
   async remove(id: string, user: User): Promise<{ message: string }> {
     const task = await this.findOne(id, user);
     await this.taskRepository.remove(task);
-    return { message: 'Görev silindi' };
+    return { message: 'Task deleted successfully' };
   }
   
   async findAllAdmin(): Promise<Task[]> {

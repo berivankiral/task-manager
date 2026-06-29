@@ -5,10 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-} from 'typeorm';
+  Index,} from 'typeorm';
 import { User } from '../auth/user.entity';
 
 @Entity('tasks')
+@Index(['userId', 'status'])   
+@Index(['userId', 'priority']) 
+//@Index(['userId', 'status', 'priority'])
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -31,6 +34,7 @@ export class Task {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
+  @Index()
   @Column()
   userId: string;
 

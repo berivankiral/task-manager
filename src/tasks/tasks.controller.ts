@@ -1,5 +1,5 @@
 import {Controller, Get, Post, Patch, Delete,Body, Param, Query, UseGuards, Request,} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiCookieAuth, ApiQuery} from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -11,6 +11,7 @@ import { User } from '../auth/user.entity';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
+@ApiCookieAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class TasksController {
@@ -22,10 +23,22 @@ export class TasksController {
     return this.tasksService.create(dto, req.user as User);
   }
 
-  @ApiOperation({ summary: 'List all tasks' })
+  @ApiOperation({ summary: 'List all tasks with filtering and pagination' })
+  @ApiQuery({ name: 'status', required: false, enum: ['todo', 'in_progress', 'done'], type: String, description: 'Filter by status (todo, in_progress, done)' })
+  @ApiQuery({ name: 'priority', required: false, enum: ['low', 'medium', 'high'], type: String, description: 'Filter by priority (low, medium, high)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for pagination' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of tasks per page for pagination' })
   @Get()
-  findAll(@Request() req, @Query('status') status?: string, @Query('priority') priority?: string) {
-    return this.tasksService.findAll(req.user as User, { status, priority });
+  findAll(@Request() req, 
+  @Query('status') status?: string, 
+  @Query('priority') priority?: string,
+  @Query('page') page?: string, 
+  @Query('limit') limit?: string) {
+    return this.tasksService.findAll(req.user as User, { 
+      status, 
+      priority, 
+      page : page? +page: undefined, 
+      limit: limit? +limit: undefined });
   }
 
   @ApiOperation({ summary: 'Get a single task' })
