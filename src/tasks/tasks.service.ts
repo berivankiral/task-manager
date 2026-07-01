@@ -37,8 +37,12 @@ export class TasksService {
       query.andWhere('task.priority = :priority', { priority: filters.priority });
     }
 
-    const total = await query.getCount();
-    const data = await query.orderBy('task.createdAt', 'DESC').skip(skip).take(limit).getMany();
+   const [data, total] = await query
+      .orderBy('task.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount(); 
+
     return { data, total, page, limit };
   }
 

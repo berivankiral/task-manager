@@ -28,7 +28,7 @@ export class Job {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
-  @Index()
+  //@Index()
   @Column()
   userId: string;
 

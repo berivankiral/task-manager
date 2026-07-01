@@ -2,6 +2,7 @@ import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard} from '@nestjs/throttler';
+//import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis'; 
 import { APP_GUARD } from '@nestjs/core';
 import {InjectRepository} from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,10 +18,25 @@ import * as bcrypt from 'bcrypt';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    
     ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 15,
-    }]),
+  ttl: 60000,
+  limit: 15,
+}]),
+    // ThrottlerModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: (config: ConfigService) => ({
+    //     throttlers: [{
+    //       ttl: 60000, 
+    //       limit: 15,  
+    //     }],
+    //     storage: new ThrottlerStorageRedisService({
+    //       host: config.get('REDIS_HOST', 'redis'),
+    //       port: config.get<number>('REDIS_PORT', 6379),
+    //     }),
+    //   }),
+    // }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

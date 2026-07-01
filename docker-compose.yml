@@ -1,6 +1,13 @@
 # version: '2.38.2'
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
   postgres:
     image: postgres:15-alpine
     container_name: postgres
@@ -29,6 +36,8 @@ services:
       INSTANCE_ID: api-1
     depends_on:
       - postgres
+    volumes:
+      - uploads_data:/usr/src/app/uploads
     networks:
       - app-network
 
@@ -46,6 +55,8 @@ services:
       INSTANCE_ID: api-2
     depends_on:
       - postgres
+    volumes:
+      - uploads_data:/usr/src/app/uploads
     networks:
       - app-network
 
@@ -63,6 +74,8 @@ services:
       INSTANCE_ID: api-3
     depends_on:
       - postgres
+    volumes:
+      - uploads_data:/usr/src/app/uploads
     networks:
       - app-network
 
@@ -86,3 +99,4 @@ networks:
 
 volumes:
   postgres_data:
+  uploads_data:

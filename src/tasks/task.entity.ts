@@ -5,12 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  JoinColumn,
   Index,} from 'typeorm';
 import { User } from '../auth/user.entity';
 
 @Entity('tasks')
-@Index(['userId', 'status'])   
-@Index(['userId', 'priority']) 
+@Index(['userId', 'status', 'createdAt'])   
+@Index(['userId', 'priority', 'createdAt']) 
 //@Index(['userId', 'status', 'priority'])
 export class Task {
   @PrimaryGeneratedColumn('uuid')
@@ -19,22 +20,22 @@ export class Task {
   @Column()
   title: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ default: 'todo' })
+  @Column({ type: 'varchar', default: 'todo' })
   status: 'todo' | 'in_progress' | 'done';
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', default: 'medium', nullable: true })
   priority: 'low' | 'medium' | 'high';
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   dueDate: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({name: 'userId'})
   user: User;
 
-  @Index()
   @Column()
   userId: string;
 

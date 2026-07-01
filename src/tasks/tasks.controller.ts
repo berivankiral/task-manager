@@ -8,6 +8,7 @@ import {RolesGuard} from '../auth/roles.guard';
 import {Roles} from '../auth/roles.decorator';
 import { Role } from '../auth/roles.enum';
 import { User } from '../auth/user.entity';
+import { FastifyRequest } from 'fastify';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
@@ -19,7 +20,7 @@ export class TasksController {
 
   @ApiOperation({ summary: 'Create a new task' })
   @Post()
-  create(@Body() dto: CreateTaskDto, @Request() req) {
+  create(@Body() dto: CreateTaskDto, @Request() req: FastifyRequest & { user: User }) {
     return this.tasksService.create(dto, req.user as User);
   }
 
@@ -29,7 +30,7 @@ export class TasksController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for pagination' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of tasks per page for pagination' })
   @Get()
-  findAll(@Request() req, 
+  findAll(@Request() req: FastifyRequest & { user: User }, 
   @Query('status') status?: string, 
   @Query('priority') priority?: string,
   @Query('page') page?: string, 
@@ -37,25 +38,25 @@ export class TasksController {
     return this.tasksService.findAll(req.user as User, { 
       status, 
       priority, 
-      page : page? +page: undefined, 
-      limit: limit? +limit: undefined });
+      page : page? Number(page): undefined, 
+      limit: limit? Number(limit): undefined });
   }
 
   @ApiOperation({ summary: 'Get a single task' })
   @Get(':id')
-  findOne(@Param('id') id: string, @Request() req) {
+  findOne(@Param('id') id: string, @Request() req: FastifyRequest & { user: User }) {
     return this.tasksService.findOne(id, req.user as User);
   }
 
   @ApiOperation({ summary: 'Update a task' })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateTaskDto, @Request() req) {
+  update(@Param('id') id: string, @Body() dto: UpdateTaskDto, @Request() req: FastifyRequest & { user: User }) {
     return this.tasksService.update(id, dto, req.user as User);
   }
 
   @ApiOperation({ summary: 'Delete a task' })
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: string, @Request() req: FastifyRequest & { user: User }) {
     return this.tasksService.remove(id, req.user as User);
   }
 
