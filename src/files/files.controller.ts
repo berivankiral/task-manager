@@ -37,7 +37,13 @@ export class FilesController {
   })
   @Post('upload')
   async uploadFile(@Request() req: FastifyRequest & { user: User }) {
-    const data = await req.file();
+
+    const uploadDir = /.uploads/;
+    if (!fs.existsSync('./uploads')) {
+      fs.mkdirSync('./uploads', { recursive: true });
+    }
+
+    const data = await req.file( );
 
     if (!data) throw new BadRequestException('No file provided');
 
@@ -48,6 +54,7 @@ export class FilesController {
 
     await pipeline(data.file, fs.createWriteStream(uploadPath));
 
+    
     const originalname = Buffer.from(data.filename, 'latin1').toString('utf8');
 
     return this.filesService.uploadFile({

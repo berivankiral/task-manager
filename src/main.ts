@@ -24,7 +24,7 @@ async function bootstrap() {
         fileSize: 256 * 1024 * 1024, // 256 MB
       },
     });
-
+// http://localhost:3000/uploads/dosya-adi.jpg dışarıdan erişim için ekledim
     await app.register(fastifyStatic, {
       root: join(__dirname, '..', 'uploads'),
       prefix: '/uploads/',
